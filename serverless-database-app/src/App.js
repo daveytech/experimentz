@@ -1,23 +1,26 @@
 import './App.css';
 import { EasybaseProvider, useEasybase } from 'easybase-react';
 import { useEffect } from 'react';
+import ebconfig from './ebconfig';
 
 function App() {
   return (
     <div className="App" style={{ display: "flex", justifyContent: "center" }}>
-      <EasybaseProvider>
+      <EasybaseProvider ebconfig={ebconfig}>
         <Notes />
+        <NewNoteButton />
       </EasybaseProvider>
     </div>
   );
 }
 
 function Notes() {
-  const backendData = [
-    { title: "Grocery List", description: "Milk, Soup, Bread", createdat: "01-18-2021" },
-    { title: "Math Homework", description: "Remember to finish question 8-10 before monday", createdat: "12-01-2020" },
-    { title: "Call James", description: "Ask him about the company party.", createdat: "12-30-2020" }
-  ]
+  const { Frame, sync, configureFrame } = useEasybase();
+
+  useEffect(() => {
+    configureFrame({ tableName: "TEST", limit: 10 });
+    sync();
+  }, []);
 
   const noteRootStyle = {
     border: "2px #0af solid",
@@ -29,15 +32,41 @@ function Notes() {
 
   return (
     <div style={{ width: 400 }}>
-      {backendData.map(ele => 
+      {Frame().map(ele => 
         <div style={noteRootStyle}>
           <h3>{ele.title}</h3>
           <p>{ele.description}</p>
-          <small>{ele.createdat}</small>
+          <small>{String(ele.createdat).slice(0, 10)}</small>
         </div>
       )}
     </div>
   )
+}
+
+function NewNoteButton() {
+  const { Frame, sync } = useEasybase();
+
+  const buttonStyle = {
+    position: "absolute",
+    left: 10,
+    top: 10,
+    fontSize: 21
+  }
+
+  const handleClick = () => {
+    const newTitle = prompt("Please enter a title for your note");
+    const newDescription = prompt("Please enter your description");
+    
+    Frame().push({
+      title: newTitle,
+      description: newDescription,
+      createdat: new Date().toISOString()
+    })
+    
+    sync();
+  }
+
+  return <button style={buttonStyle} onClick={handleClick}>📓 Add Note 📓</button>
 }
 
 export default App;
